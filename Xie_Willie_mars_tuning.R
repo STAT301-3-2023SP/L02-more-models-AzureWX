@@ -1,4 +1,4 @@
-# Random Forest tuning ----
+# MARS tuning ----
 
 # Load package(s) ----
 library(tidyverse)
@@ -17,33 +17,33 @@ registerDoParallel(cores.cluster)
 source('Xie_Willie_L02.R')
 
 # Define model ----
-rforest_model = rand_forest(
-  min_n = tune(),
-  mtry = tune()) %>%
-  set_engine('ranger') %>%
+mars_model = mars(
+  num_terms = tune(),
+  prod_degree = tune()) %>%
+  set_engine('earth') %>%
   set_mode('classification')
 
 # workflow ----
-rforest_wflow = workflow() %>%
-  add_model(rforest_model) %>%
+mars_wflow = workflow() %>%
+  add_model(mars_model) %>%
   add_recipe(basic_recipe)
 
 # set-up tuning grid ----
-rforest_params = rforest_wflow %>%
+mars_params = mars_wflow %>%
   extract_parameter_set_dials() %>%
-  update(mtry = mtry(c(1,15)))
+  update(num_terms = num_terms(c(1,15)))
 
 # define tuning grid
-rforest_grid = grid_regular(rforest_params, levels = 5)
+mars_grid = grid_regular(mars_params, levels = 5)
 
 # Tuning/fitting ----
 tic.clearlog()
-tic("Random Forest")
+tic("MARS")
 
-rforest_tuned = tune_grid(
-  rforest_wflow,
+mars_tuned = tune_grid(
+  mars_wflow,
   resamples = data_folds,
-  grid = rforest_grid,
+  grid = mars_grid,
   control = control_grid(save_pred = TRUE,
                          save_workflow = TRUE,
                          parallel_over = "everything"),
@@ -54,18 +54,18 @@ rforest_tuned = tune_grid(
 toc(log = TRUE)
 
 # save runtime info
-rforest_log <- tic.log(format = FALSE)
+mars_log <- tic.log(format = FALSE)
 
-rforest_tictoc <- tibble(
-  model = rforest_log[[1]]$msg,
-  runtime = rforest_log[[1]]$toc - rforest_log[[1]]$tic
+mars_tictoc <- tibble(
+  model = mars_log[[1]]$msg,
+  runtime = mars_log[[1]]$toc - mars_log[[1]]$tic
 )
 
 stopCluster(cores.cluster)
 
 # Write out results & workflow
-# write_rds(rforest_tuned, file = 'model_info/rforest/rforest_tuned.rds')
-# write_rds(rforest_tictoc, file = 'model_info/rforest/rforest_time.rds')
+# write_rds(mars_tuned, file = 'model_info/mars/mars_tuned.rds')
+# write_rds(mars_tictoc, file = 'model_info/mars/mars_time.rds')
 
 
 
