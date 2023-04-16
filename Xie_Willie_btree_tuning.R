@@ -65,8 +65,8 @@ btree_tictoc <- tibble(
 stopCluster(cores.cluster)
 
 # Write out results & workflow
-write_rds(btree_tuned, file = 'model_info/btree/btree_tuned.rds')
-write_rds(btree_tictoc, file = 'model_info/btree/btree_time.rds')
+# write_rds(btree_tuned, file = 'model_info/btree/btree_tuned.rds')
+# write_rds(btree_tictoc, file = 'model_info/btree/btree_time.rds')
 
 
 
