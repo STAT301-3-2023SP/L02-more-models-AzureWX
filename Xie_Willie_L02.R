@@ -32,7 +32,7 @@ basic_recipe = recipe(wlf ~ ., data = data_train) %>%
   step_dummy(all_nominal_predictors()) %>%
   step_zv(all_predictors()) %>%
   step_normalize(all_predictors())
-View(basic_recipe %>% prep() %>% bake(new_data = NULL))
+# View(basic_recipe %>% prep() %>% bake(new_data = NULL))
 
 interact_recipe = recipe(wlf ~ ., data = data_train) %>%
   step_novel(all_nominal_predictors()) %>%
@@ -40,6 +40,6 @@ interact_recipe = recipe(wlf ~ ., data = data_train) %>%
   step_interact(~ all_predictors():all_predictors()) %>%
   step_zv(all_predictors()) %>%
   step_normalize(all_predictors())
-View(interact_recipe %>% prep() %>% bake(new_data = NULL))
+# View(interact_recipe %>% prep() %>% bake(new_data = NULL))
   
 

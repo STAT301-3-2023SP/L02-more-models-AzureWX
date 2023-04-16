@@ -1,4 +1,4 @@
-# Elastic net tuning ----
+# K-nearest neighbors tuning ----
 
 # Load package(s) ----
 library(tidyverse)
@@ -17,32 +17,31 @@ registerDoParallel(cores.cluster)
 source('Xie_Willie_L02.R')
 
 # Define model ----
-enet_model = logistic_reg(
-  penalty = tune(),
-  mixture = tune()) %>%
-  set_engine('glmnet') %>%
+knn_model = nearest_neighbor(
+  neighbors = tune()) %>%
+  set_engine('kknn') %>%
   set_mode('classification')
 
 # workflow ----
-enet_wflow = workflow() %>%
-  add_model(enet_model) %>%
-  add_recipe(interact_recipe)
+knn_wflow = workflow() %>%
+  add_model(knn_model) %>%
+  add_recipe(basic_recipe)
 
 # set-up tuning grid ----
-enet_params = enet_wflow %>%
+knn_params = knn_wflow %>%
   extract_parameter_set_dials()
 
 # define tuning grid
-enet_grid = grid_regular(enet_params, levels = 5)
+knn_grid = grid_regular(knn_params, levels = 5)
 
 # Tuning/fitting ----
 tic.clearlog()
-tic("Elastic Net")
+tic("K nearest")
 
-enet_tuned = tune_grid(
-  enet_wflow,
+knn_tuned = tune_grid(
+  knn_wflow,
   resamples = data_folds,
-  grid = enet_grid,
+  grid = knn_grid,
   control = control_grid(save_pred = TRUE,
                          save_workflow = TRUE,
                          parallel_over = "everything"),
@@ -53,18 +52,19 @@ enet_tuned = tune_grid(
 toc(log = TRUE)
 
 # save runtime info
-enet_log <- tic.log(format = FALSE)
+knn_log <- tic.log(format = FALSE)
 
-enet_tictoc <- tibble(
-  model = enet_log[[1]]$msg,
-  runtime = enet_log[[1]]$toc - enet_log[[1]]$tic
+knn_tictoc <- tibble(
+  model = knn_log[[1]]$msg,
+  runtime = knn_log[[1]]$toc - knn_log[[1]]$tic
 )
 
 stopCluster(cores.cluster)
 
 # Write out results & workflow
-# write_rds(enet_tuned, file = 'model_info/enet/enet_tuned.rds')
-# write_rds(enet_tictoc, file = 'model_info/enet/enet_time.rds')
+# write_rds(knn_tuned, file = 'model_info/knn/knn_tuned.rds')
+# write_rds(knn_tictoc, file = 'model_info/knn/knn_time.rds')
+
 
 
 
