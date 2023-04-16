@@ -6,11 +6,13 @@ format:
   html:
     toc: true
     embed-resources: true
-    code-fold: show
+    code-fold: true
     link-external-newwindow: true
 execute:
   warning: false
 from: markdown+emoji  
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Github Repo Link
@@ -90,7 +92,78 @@ A short write-up that includes:
 
 3. Final selection, training, and evaluation of the best model. 
 
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(gt)
+library(gtExtras)
+
+model_sum = read_rds('model_info/model_sum.rds')
+
+actual_colnames = colnames(model_sum)
+desired_colnames = actual_colnames %>%
+  str_to_title() %>%
+  str_replace('_', ' ')
+names(desired_colnames) = actual_colnames
+
+model_sum %>%
+  gt() %>%
+  cols_label(.list = desired_colnames) %>%
+  tab_spanner(
+    label = md('**Roc Auc**'), columns = 3:5
+  ) %>%
+  tab_spanner(
+    label = md('**Model Parameters**'), columns = 6:18
+  ) %>%
+  tab_header(title = 'Model Performance') %>%
+  cols_align(align = 'left') %>%
+  sub_missing(missing_text = '-') %>%
+  gt_theme_538() %>%
+  gt_color_rows(columns = runtime, domain = c(0, 200), palette = c('blue', 'red')) %>%
+  gt_color_rows(columns = mean, domain = c(0.75,1), palette = c('blue', 'red')) %>%
+  fmt_number(columns = everything(), n_sigfig = 3)
+
+ggplot(model_sum, aes(model, mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = mean - 1.96*std_err, ymax = mean + 1.96*std_err)) +
+  scale_y_continuous(breaks = seq(0.5, 1, 0.02)) +
+  scale_x_discrete(limits = (model_sum %>% arrange(desc(mean)))$model) +
+  coord_flip() +
+  labs(
+    title = 'Model Performance',
+    x = 'Model', y = 'Roc Auc'
+  )
+```
+
+From the table, it appears that the best model is the elastic net with an extremely
+high Roc Auc of 0.910 followed by a single layer neural network at 0.897 and
+SVM with a polynomial boundaries at 0.890. The worst performing model based on
+the Roc Auc is the K-nearest neighbors, but it also has the fastest runtime of 9.23 seconds.
+In contrast, the elastic net and neural network both have has medium runtime of 27.5
+and 46.7 seconds while the SVM polynomial has an extremely long runtime of 129 seconds.
+
+From the table, while the elastic net has the highest mean Roc Auc, a 95\% Roc Auc
+confidence interval suggest that the elastic net, neural network, and SVM polynomial
+perform roughly the same. But, overall, since the elastic net has the highest Roc Auc
+while a medium time to process, the elastic net is most likely the best model.
+
+```{r}
+final_fit = read_rds('model_info/final_model.rds')
+final_fit %>% collect_metrics()
+final_fit %>% collect_predictions() %>%
+  conf_mat(truth = wlf, estimate = .pred_class) %>%
+  autoplot(type = 'heatmap')
+```
+
+Training the elastic net model on the training data, the Roc Auc from the
+testing data is similar at 0.887. The model also has a decent accuracy at 0.782.
+From the confusion, it appears that the model correctly predicts yes when the
+actual value is yes $\frac{35}{35+12} = 0.745$ about the same as correctly
+predicting no when the actual value is no $\frac{44}{44+10} = 0.815$.
+So, the model performs equally well in predicting if a wildfire reaches or
+not reaches a protection area.
+
 ## Github Repo Link
 
-[YOUR GITHUB URL](YOUR GITHUB URL){target="_blank"}
+[https://github.com/STAT301-3-2023SP/L02-more-models-AzureWX](https://github.com/STAT301-3-2023SP/L02-more-models-AzureWX){target="_blank"}
 
